@@ -63,14 +63,14 @@
 --------------------------------------*/
 
 #include "BBBCAM.h"
-//#include "UTFT_SPI.h"
 #include "memorysaver.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
 #include <linux/i2c-dev.h>
 #include <linux/i2c-dev.h>
-
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
 
 
 /*
@@ -80,6 +80,9 @@ Description :	BeagleBone Black Camera Instantiation,
 							Initialize the Camera structure,
 							Initialize the SPI and I2C ports
 */
+
+static const char *device = "/dev/spidev1.0";
+
 int ArduCAM(uint8_t model)
 {
 
@@ -113,27 +116,27 @@ int ArduCAM(uint8_t model)
 			break;
 	}
 	//initialize spi0
-	spi0 = open(spidev0, O_RDWR);       
+	spi0 = open(device, O_RDWR);       
 	if (spi0 < 0)
-		printf("can't open device");
+		printf("can't open device\r\n");
 	ret = ioctl(spi0, SPI_IOC_WR_MODE, &mode);  
 	if (ret == -1)
-		printf("can't set spi mode");
+		printf("can't set spi mode\r\n");
 	ret = ioctl(spi0, SPI_IOC_RD_MODE, &mode); 
 	if (ret == -1)
-		printf("can't get spi mode");
+		printf("can't get spi mode\r\n");
 	ret = ioctl(spi0, SPI_IOC_WR_BITS_PER_WORD, &bits);  
 	if (ret == -1)
-		printf("can't set bits per word");
+		printf("can't set bits per word\r\n");
 	ret = ioctl(spi0, SPI_IOC_RD_BITS_PER_WORD, &bits);   
 	if (ret == -1)
-		printf("can't get bits per word");
+		printf("can't get bits per word\r\n");
 	ret = ioctl(spi0, SPI_IOC_WR_MAX_SPEED_HZ, &speed);     
 	if (ret == -1)
-		printf("can't set max speed hz");
+		printf("can't set max speed hz\r\n");
 	ret = ioctl(spi0, SPI_IOC_RD_MAX_SPEED_HZ, &speed);  
 	if (ret == -1)
-		printf("can't get max speed hz");
+		printf("can't get max speed hz\r\n");
 	// initialize i2c:
 	if((i2c1 = open(i2cdev1, O_RDWR)) < 0)
 	{
@@ -168,6 +171,7 @@ void InitCAM()
 			#endif
 			break;
 		}
+
 		case OV7725:
 		{
 			#if defined OV7725_CAM

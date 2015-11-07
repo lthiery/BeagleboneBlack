@@ -12,12 +12,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
-#include "UTFT_SPI.h"
 #include "BBBCAM.h"
-
-#define BOOL int
-#define TRUE 1
-#define FALSE 0
 
 #define OV5642_CHIPID_HIGH 0x300a
 #define OV5642_CHIPID_LOW 0x300b
@@ -27,7 +22,6 @@ void setup()
   uint8_t vid,pid;
   uint8_t temp; 
 
-  UTFT();
   ArduCAM(OV5642);
   printf("ArduCAM Start!\n");
 
@@ -45,7 +39,6 @@ void setup()
   //Change MCU mode
   write_reg(ARDUCHIP_MODE, 0x00);
 
-  InitLCD();
   
   //Check if the camera module type is OV5642
   rdSensorReg16_8(OV5642_CHIPID_HIGH, &vid);
@@ -63,7 +56,6 @@ void setup()
 
 int  main(void)
 {
-	BOOL isShowFlag = TRUE;
 	int nmemb = 1;
 
 	setup();
@@ -77,46 +69,12 @@ int  main(void)
 		uint8_t temp,temp_last;
 		uint8_t start_capture = 0;
 
-		//Wait trigger from shutter buttom
-		if(read_reg(ARDUCHIP_TRIG) & SHUTTER_MASK)
-		{
-			isShowFlag = FALSE;
-			write_reg(ARDUCHIP_MODE, 0x00);
-			set_format(JPEG);
-			InitCAM();
-			write_reg(ARDUCHIP_TIM, VSYNC_LEVEL_MASK);		//VSYNC is active HIGH
-
-			//Wait until buttom released
-			while(read_reg(ARDUCHIP_TRIG) & SHUTTER_MASK);
-			delayms(1000);
-			start_capture = 1;
-    	
-		}
-		else
-		{
-			if(isShowFlag )
-			{
-				temp = read_reg(ARDUCHIP_TRIG);
-  
-				if(!(temp & VSYNC_MASK))				 			//New Frame is coming
-				{
-					write_reg(ARDUCHIP_MODE, 0x00);    		//Switch to MCU
-					resetXY();
-					write_reg(ARDUCHIP_MODE, 0x01);    		//Switch to CAM
-					while(!(read_reg(ARDUCHIP_TRIG)&0x01)); 	//Wait for VSYNC is gone
-				}
-			}
-		}
-		if(start_capture)
-		{
-			//Flush the FIFO
-			flush_fifo();
-			//Clear the capture done flag
-			clear_fifo_flag();
-			//Start capture
-			capture();
-			printf("Start Capture\n");
-		}
+		flush_fifo();
+		//Clear the capture done flag
+		clear_fifo_flag();
+		//Start capture
+		capture();
+		printf("Start Capture\n");
   
 		if(read_reg(ARDUCHIP_TRIG) & CAP_DONE_MASK)
 		{
@@ -170,9 +128,7 @@ int  main(void)
 			//Clear the start capture flag
 			start_capture = 0;
     
-			set_format(BMP);
 			InitCAM();
-			isShowFlag = TRUE;
 		}
 	}
 }

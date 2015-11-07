@@ -15,7 +15,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#include "UTFT_SPI.h"
 #include "BBBCAM.h"
 
 #define BOOL int
@@ -37,7 +36,6 @@ void setup()
   uint8_t vid,pid;
   uint8_t temp;
 
-  UTFT();
   ArduCAM(OV5642);
 
   printf("ArduCAM Start!\n");
@@ -53,9 +51,6 @@ void setup()
 
   //Change MCU mode
   //write_reg(ARDUCHIP_MODE, 0x00);
-
-  //Initialize the LCD Module
-  InitLCD();
 
   InitCAM();
 }
@@ -196,8 +191,6 @@ int Playback()
 	system("dir /home/*.bmp > /home/bmp.txt");
 	printf("Camera Playback. \n");
 	write_reg(ARDUCHIP_MODE, 0x00);    		//Switch to MCU
-	InitLCD(PORTRAIT);
-	
 	
 	fnum = fopen("/home/bmp.txt","r");
 	fseek(fnum, 0, SEEK_END);   
