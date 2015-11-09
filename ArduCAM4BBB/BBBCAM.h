@@ -148,8 +148,12 @@
 /****************************************************/
 /* ArduChip related definition 											*/
 /****************************************************/
-#define ARDUCHIP_TEST1       	0x00  //TEST register
-#define ARDUCHIP_TEST2      	0x01  //TEST register
+#define ARDUCHIP_TEST1       		0x00  //TEST register
+#define ARDUCHIP_TEST2      		0x01  //TEST register
+
+#define ARDUCHIP_GPIO			0x06	
+#define GPIO_PWDN_MASK			0x01
+#define GPIO_RESET_MASK			0x02
 
 #define ARDUCHIP_MODE      		0x02  //Mode register
 #define MCU2LCD_MODE       		0x00
@@ -214,7 +218,7 @@ static const char *spidev0 = "/dev/spidev1.0";
 static uint8_t mode=0;
 static uint8_t bits = 8;
 static uint16_t delay;
-static uint32_t speed = 1000000;
+static uint32_t speed = 100000;
 
 int ArduCAM(uint8_t model);
 void InitCAM();

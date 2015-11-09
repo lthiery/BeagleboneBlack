@@ -73,6 +73,8 @@
 #include <linux/spi/spidev.h>
 
 
+#include <unistd.h> //for usleep
+
 /*
 Function: 		BBBCAM
 Param: 				camera model
@@ -151,6 +153,72 @@ int ArduCAM(uint8_t model)
 	}
 }
 
+
+enum OV5642_res
+{	
+	OV5642_320x240=1,
+	OV5642_640x480=2,
+	OV5642_1280x720=3,
+	OV5642_1920x1080=4,
+	OV5642_2048x1563=5,
+	OV5642_2592x1944=6
+};
+
+void OV5642_set_jpeg_size(enum OV5642_res res){
+	wrSensorRegs16_8(ov5642_dvp_fmt_global_init);
+	usleep(100000);
+
+	switch(res)
+	{
+		case OV5642_320x240:
+			wrSensorRegs16_8(ov5642_dvp_fmt_jpeg_qvga);
+			wrSensorReg16_8(0x4407,0x04);
+			wrSensorReg16_8(0x3818,0xA8);
+			wrSensorReg16_8(0x3621,0x10);
+			wrSensorReg16_8(0x3801,0xC8);
+			return;
+			break;
+		case OV5642_640x480:
+			wrSensorRegs16_8(ov5642_dvp_fmt_jpeg_vga);
+			wrSensorReg16_8(0x3818, 0xA8);
+			wrSensorReg16_8(0x3621, 0x10);
+			wrSensorReg16_8(0x3801 , 0xC8);
+			break;
+		case OV5642_1280x720:
+			wrSensorRegs16_8(ov5642_dvp_fmt_jpeg_qvga);
+			wrSensorRegs16_8(ov5642_res_720P);
+			wrSensorReg16_8(0x3818, 0xA8);
+			wrSensorReg16_8(0x3621, 0x10);
+			wrSensorReg16_8(0x3801 , 0xC8);
+			break;
+		case OV5642_1920x1080:
+			wrSensorRegs16_8(ov5642_dvp_fmt_jpeg_qvga);
+			wrSensorRegs16_8(ov5642_res_1080P);
+			wrSensorReg16_8(0x3818, 0xA8);
+			wrSensorReg16_8(0x3621, 0x10);
+			wrSensorReg16_8(0x3801 , 0xC8);
+			break;
+		case OV5642_2048x1563:
+			wrSensorRegs16_8(ov5642_dvp_fmt_jpeg_qxga);
+			wrSensorReg16_8(0x3818, 0xA8);
+			wrSensorReg16_8(0x3621, 0x10);
+			wrSensorReg16_8(0x3801 , 0xC8);
+			break;
+		case OV5642_2592x1944:		
+			wrSensorRegs16_8(ov5642_dvp_fmt_jpeg_5M);
+			wrSensorReg16_8(0x4407,0x08);
+			wrSensorReg16_8(0x3818, 0xA8);
+			wrSensorReg16_8(0x3621, 0x10);
+			wrSensorReg16_8(0x3801 , 0xC8);
+			
+			break;
+		default:
+			wrSensorRegs16_8(ov5642_dvp_fmt_jpeg_qvga);
+		break;
+	}
+}
+
+
 /*
 Function: 		InitCAM
 Param: 				None
@@ -166,7 +234,7 @@ void InitCAM()
 		{
 			#if defined OV7660_CAM
 			wrSensorReg8_8(0x12, 0x80);
-			delayms(100);
+			usleep(100000);
 			rtn = wrSensorRegs8_8(OV7660_QVGA);
 			#endif
 			break;
@@ -176,7 +244,7 @@ void InitCAM()
 		{
 			#if defined OV7725_CAM
 			wrSensorReg8_8(0x12, 0x80);
-			delayms(100);
+			usleep(100000);
 			rtn = wrSensorRegs8_8(OV7725_QVGA);
 			rdSensorReg8_8(0x15,&reg_val);
 			wrSensorReg8_8(0x15, (reg_val | 0x02));
@@ -187,7 +255,7 @@ void InitCAM()
 		{
 			#if defined OV7670_CAM
 			wrSensorReg8_8(0x12, 0x80);
-			delayms(100);
+			usleep(100000);
 			wrSensorReg8_8(0x3a, 0x04);
 			rtn = wrSensorRegs8_8(OV7670_QVGA);
 			#endif
@@ -197,7 +265,7 @@ void InitCAM()
 		{
 			#if defined OV7675_CAM
 			wrSensorReg8_8(0x12, 0x80);
-			delayms(100);
+			usleep(100000);
 			rtn = wrSensorRegs8_8(OV7675_QVGA);
 
 			#endif
@@ -222,26 +290,22 @@ void InitCAM()
 		case OV5642:
 		{
 			#if defined OV5642_CAM
+			// disable low power
+			uint8_t temp = read_reg(ARDUCHIP_GPIO);
+			temp &= (~1<<GPIO_PWDN_MASK);
+			write_reg(ARDUCHIP_GPIO, 0x15);
+			
+usleep(100000);
 			wrSensorReg16_8(0x3008, 0x80);
-
-			delayms(100);
-			if(myCAM.m_fmt == JPEG)
-			{
-				wrSensorRegs16_8(OV5642_1080P_Video_setting);
-				rdSensorReg16_8(0x3818,&reg_val);
-				wrSensorReg16_8(0x3818, (reg_val | 0x20) & 0xBf);
-				rdSensorReg16_8(0x3621,&reg_val);
-				wrSensorReg16_8(0x3621, reg_val | 0x20);
-			}
-			else
-			{
-				wrSensorRegs16_8(OV5642_RGB_QVGA);
-				rdSensorReg16_8(0x3818,&reg_val);
-				wrSensorReg16_8(0x3818, (reg_val | 0x60) & 0xff);
-				rdSensorReg16_8(0x3621,&reg_val);
-				wrSensorReg16_8(0x3621, reg_val & 0xdf);
-			}
-
+			usleep(100000);
+			printf("Configuring JPEG\r\n");
+			
+			wrSensorRegs16_8(ov5642_dvp_fmt_global_init);
+			usleep(100000);
+			wrSensorRegs16_8(ov5642_dvp_fmt_jpeg_qvga);
+			wrSensorReg16_8(0x4007, 0x0C);
+			OV5642_set_jpeg_size(OV5642_1280x720);	
+			//OV5642_set_jpeg_size(OV5642_320x240);
 			#endif
 			break;
 		}
@@ -257,7 +321,7 @@ void InitCAM()
 			#if defined OV2640_CAM
 			wrSensorReg8_8(0xff, 0x01);
 			wrSensorReg8_8(0x12, 0x80);
-			delayms(100);
+			usleep(100000);
 			if(myCAM.m_fmt == JPEG)
 			{
 				wrSensorRegs8_8(OV2640_JPEG_INIT);
@@ -401,7 +465,7 @@ uint8_t wrSensorReg16_8(uint16_t regID, uint8_t regDat)
 	uint16_t value;
 	reg_H = (regID >> 8) & 0x00ff;
 	reg_L = regID & 0x00ff;
-	char wbuf[3]={reg_H,reg_L,regDat}; //first byte is address to write. others are bytes to be written
+	char wbuf[4]={reg_H,reg_L,regDat}; //first byte is address to write. others are bytes to be written
 	write(i2c1, wbuf, 3);
 	return 1;
 }
@@ -459,15 +523,15 @@ int wrSensorRegs16_8(const struct sensor_reg reglist[])
 {
 	int err = 0;
 
-	unsigned int reg_addr,reg_val;
+	uint16_t reg_addr,reg_val;
 	const struct sensor_reg *next = reglist;
 
 	while ((reg_addr != 0xffff) | (reg_val != 0xff))
 	{
-		reg_addr = pgm_read_word(&next->reg);
-		reg_val = pgm_read_word(&next->val);
+		reg_addr = next->reg;
+		reg_val = next->val;
 		err = wrSensorReg16_8(reg_addr, reg_val);
-   	next++;
+   		next++;
 	}
 
 	return 1;
